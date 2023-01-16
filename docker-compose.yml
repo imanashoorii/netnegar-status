@@ -24,7 +24,7 @@ services:
     restart: always
     environment:
       MYSQL_DATABASE: 'netnegar_status'
-      MYSQL_USER: 'zibal'
+      MYSQL_USER: 'admin'
       MYSQL_PASSWORD: 'admin'
       MYSQL_ROOT_USER: 'root'
       MYSQL_ROOT_PASSWORD: 'root'
