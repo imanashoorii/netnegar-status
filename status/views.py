@@ -16,7 +16,6 @@ from .utils import convertIntervalToPersian
 from .iranMonthRange import fromDate_toDate
 
 
-
 class CreateIncident(generics.CreateAPIView):
     permission_classes = (
         IsAuthenticated,
@@ -102,7 +101,8 @@ class HealthChart(GenericAPIView):
 
             if interval == "daily":
                 deltaTime = datetime.now() - timedelta(1)
-                pipeline[0]["$match"]['time'] = {"$gte": deltaTime.replace(hour=0, minute=0, second=0), "$lte": datetime.now()}
+                pipeline[0]["$match"]['time'] = {"$gte": deltaTime.replace(hour=0, minute=0, second=0),
+                                                 "$lte": datetime.now()}
                 pipeline.append(
                     {
                         "$group": {
@@ -195,71 +195,3 @@ class HealthChart(GenericAPIView):
                 return Response(serializeItems.data, status.HTTP_200_OK)
 
 
-class HealthBar(GenericAPIView):
-    def post(self, request):
-        serializer = StatusBarSerializer(data=request.data)
-        if serializer.is_valid(raise_exception=True):
-            pipeline = [
-                {
-                    "$match": {
-                        "monitor": serializer.validated_data.get("service"),
-                        "zone": serializer.validated_data.get("zone")
-                    }
-                },
-                {
-                    "$group": {
-                        "_id": "$zone",
-                        "avgResponseTime": {"$avg": "$value"}
-                    }
-                }
-            ]
-            if serializer.validated_data.get("service") == 'API':
-                pipeline[0]['$match']['monitor'] = {"$in": [ServiceList.MYSQL, ServiceList.MONGODB]}
-            items = list(HealthDetail.objects.aggregate(*pipeline))
-            try:
-                return Response(
-                    {
-                        "zone": items[0].get("_id"),
-                        "service": serializer.validated_data.get("service"),
-                        "responseTime": ceil(items[0].get("avgResponseTime"))  # milliseconds
-                    },
-                    status.HTTP_200_OK
-                )
-            except IndexError:
-                return Response(
-                    {
-                        "message": "No Data"
-                    },
-                    status.HTTP_400_BAD_REQUEST
-                )
-
-
-class HealthBarNintyDays(GenericAPIView):
-    def post(self, request):
-        serializer = StatusBarSerializer(data=request.data)
-        if serializer.is_valid(raise_exception=True):
-            ninetyDays = datetime.now() - timedelta(90)
-            pipeline = [
-                {
-                    "$match": {
-                        "monitor": serializer.validated_data.get("service"),
-                        "time": {"$gte": ninetyDays.replace(hour=0, minute=0, second=0), "$lte": datetime.now()}
-                    }
-                },
-                {
-                    "$group": {
-                        "_id": "$trigger_type",
-                        "avgResponseTime": {"$avg": "$value"}
-                    }
-                }
-            ]
-            if serializer.validated_data.get("service") == 'API':
-                pipeline[0]['$match']['monitor'] = {"$in": [ServiceList.MYSQL, ServiceList.MONGODB]}
-            items = list(HealthDetail.objects.aggregate(*pipeline))
-            return Response(
-                {
-                    "service": serializer.validated_data.get("service"),
-                    "responseTime": ceil(items[0].get("avgResponseTime"))  # milliseconds
-                },
-                status.HTTP_200_OK
-            )
