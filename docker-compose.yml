@@ -1,0 +1,66 @@
+version: '3.8'
+
+services:
+  mongo:
+    image: mongo:5.0.13
+    container_name: mongodb
+    hostname: mongodb
+    restart: always
+    environment:
+      MONGO_INITDB_ROOT_USERNAME: root
+      MONGO_INITDB_ROOT_PASSWORD: root
+    volumes:
+      - status-app-mongodb:/data/db
+    ports:
+      - "27017:27017"
+    expose:
+      - 27017
+    networks:
+      - netnegar
+  mysql:
+    image: mysql:5.7
+    hostname: mysql
+    container_name: mysql
+    restart: always
+    environment:
+      MYSQL_DATABASE: 'zibal_status'
+      MYSQL_USER: 'zibal'
+      MYSQL_PASSWORD: 'admin'
+      MYSQL_ROOT_USER: 'root'
+      MYSQL_ROOT_PASSWORD: 'root'
+    ports:
+      - '3306:3306'
+    expose:
+      - 3306
+    networks:
+      - netnegar
+    volumes:
+      - mysql:/var/lib/mysql
+  web:
+    build: .
+    image: status:v2
+    hostname: zibal-status
+    container_name: zibal-status
+    command: python manage.py migrate
+    command: python manage.py runserver 0.0.0.0:8000 --settings healthStatus.settings
+    volumes:
+      - status-app:/app/
+    ports:
+      - 8050:8000
+    networks:
+      - netnegar
+    depends_on:
+      - mongo
+      - mysql
+
+volumes:
+  status-app-mongodb:
+    name: status-app-mongodb
+  status-app:
+    name: status-app
+  mysql:
+    name: mysql
+
+networks:
+  netnegar:
+    name: netnegar
