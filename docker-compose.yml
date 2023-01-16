@@ -23,7 +23,7 @@ services:
     container_name: mysql
     restart: always
     environment:
-      MYSQL_DATABASE: 'zibal_status'
+      MYSQL_DATABASE: 'netnegar_status'
       MYSQL_USER: 'zibal'
       MYSQL_PASSWORD: 'admin'
       MYSQL_ROOT_USER: 'root'
@@ -38,9 +38,9 @@ services:
       - mysql:/var/lib/mysql
   web:
     build: .
-    image: status:v2
-    hostname: zibal-status
-    container_name: zibal-status
+    image: status:v1
+    hostname: netnegar-status
+    container_name: netnegar-status
     command: python manage.py migrate
     command: python manage.py runserver 0.0.0.0:8000 --settings healthStatus.settings
     volumes:
